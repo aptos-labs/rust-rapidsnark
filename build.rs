@@ -15,7 +15,7 @@ fn main() {
         "{:?}",
         Command::new("bash")
             .arg("-c")
-            .arg("cd rapidsnark && ./build_tbb.sh && ./build_lib.sh")
+            .arg("cd rapidsnark && ./build_lib.sh")
             .output()
             .expect("Failed to build c++ library")
     );
@@ -24,9 +24,8 @@ fn main() {
     // shared library.
     println!("cargo:rerun-if-env-changed=LIBCLANG_PATH");
     println!("cargo:rerun-if-changed=rapidsnark/src");
-    println!("cargo:rerun-if-changed=rapidsnark/CMakeLists.txt");
+    println!("cargo:rerun-if-changed=rapidsnark/meson.build");
     println!("cargo:rerun-if-changed=rapidsnark/build_lib.sh");
-    println!("cargo:rerun-if-changed=rapidsnark/build_tbb.sh");
     println!("cargo:rerun-if-env-changed=LIBCLANG_STATIC_PATH");
     println!("cargo:rerun-if-env-changed=OPENMP_LIBRARY_PATH");
 
@@ -41,7 +40,7 @@ fn main() {
         println!("cargo:rustc-link-search=native={}", std_cpp_lib_path);
     }
 
-    let libdir_path = PathBuf::from("rapidsnark/package/lib")
+    let libdir_path = PathBuf::from("rapidsnark/build")
         // Canonicalize the path as `rustc-link-search` requires an absolute
         // path.
         .canonicalize()
@@ -79,7 +78,7 @@ fn os_specific_printlns() {
 fn os_specific_printlns() {
     println!("cargo:rustc-link-lib=stdc++"); // This is needed on linux (will error on macos)
     println!("cargo:rustc-link-search=native=/usr/lib/llvm-14/lib");
-    println!("cargo:rustc-link-search=native=./rapidsnark/package/lib");
+    println!("cargo:rustc-link-search=native=./rapidsnark/build");
 }
 
 #[cfg(not(target_os = "linux"))]
@@ -99,13 +98,10 @@ fn build_bindings() -> bindgen::Bindings {
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        .clang_arg("-I./rapidsnark/package/include")
-        .clang_arg("-I./rapidsnark/depends/json/single_include")
-        .clang_arg("-I./rapidsnark/depends/gmp/package_macos_arm64/include")
-        .clang_arg("-I./rapidsnark/depends/tbb/oneTBB/build/installed/include")
-        .clang_arg("-I./rapidsnark/depends/ffiasm/c")
-        .clang_arg("-I./rapidsnark/build")
         .clang_arg("-I./rapidsnark/src")
+        .clang_arg("-I./rapidsnark/include")
+        .clang_arg("-I./rapidsnark/depends/tbb/oneTBB/include")
+        .clang_arg("-I./rapidsnark/depends/ffiasm/c")
         .clang_arg("-std=c++17")
         .clang_arg("-stdlib=libc++")
         .blocklist_file("alt_bn128.hpp")
