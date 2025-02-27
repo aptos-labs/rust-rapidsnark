@@ -40,17 +40,24 @@ fn main() {
         println!("cargo:rustc-link-search=native={}", std_cpp_lib_path);
     }
 
-    let libdir_path = PathBuf::from("rapidsnark/build")
-        // Canonicalize the path as `rustc-link-search` requires an absolute
-        // path.
+    let rapidsnark_libdir_path = PathBuf::from("rapidsnark/build")
         .canonicalize()
         .expect("cannot canonicalize libdir path");
-    // Tell cargo to look for shared libraries in the specified directory
-    println!("cargo:rustc-link-search={}", libdir_path.to_str().unwrap());
+    println!("cargo:rustc-link-search={}", rapidsnark_libdir_path.to_str().unwrap());
+
+    let homebrew_libdir_path = PathBuf::from("/opt/homebrew/lib")
+        .canonicalize()
+        .expect("cannot canonicalize libdir path");
+    println!("cargo:rustc-link-search={}", homebrew_libdir_path.to_str().unwrap());
+
+    let onetbb_libdir_path = PathBuf::from("rapidsnark/build/subprojects/oneTBB")
+        .canonicalize()
+        .expect("cannot canonicalize libdir path");
+    println!("cargo:rustc-link-search={}", onetbb_libdir_path.to_str().unwrap());
 
     // Tell cargo to tell rustc to link the system bzip2
     // shared library.
-    println!("cargo:rustc-link-lib=static=rapidsnark-fr-fq");
+    println!("cargo:rustc-link-lib=static=rapidsnark");
 
     println!("cargo:rustc-link-lib=dylib=gmp");
     println!("cargo:rustc-link-lib=dylib=tbb");
@@ -158,13 +165,10 @@ fn build_bindings() -> bindgen::Bindings {
         .clang_arg("-I/usr/lib/llvm-14/lib/clang/14.0.6/include")
         .clang_arg("-I/usr/include/c++/12/")
         .clang_arg("-I/usr/include/x86_64-linux-gnu/c++/12/")
-        .clang_arg("-I./rapidsnark/package/include")
-        .clang_arg("-I./rapidsnark/depends/json/single_include")
-        .clang_arg("-I./rapidsnark/depends/gmp/package_macos_arm64/include")
-        .clang_arg("-I./rapidsnark/depends/tbb/oneTBB/build/installed/include")
-        .clang_arg("-I./rapidsnark/depends/ffiasm/c")
-        .clang_arg("-I./rapidsnark/build")
         .clang_arg("-I./rapidsnark/src")
+        .clang_arg("-I./rapidsnark/include")
+        .clang_arg("-I./rapidsnark/depends/tbb/oneTBB/include")
+        .clang_arg("-I./rapidsnark/depends/ffiasm/c")
         .clang_arg("-std=c++17")
         .clang_arg("-stdlib=libc++")
         .blocklist_file("alt_bn128.hpp")
